@@ -1,0 +1,57 @@
+version: '3'
+services:
+
+    redis:
+        build:
+            context: ./redis
+        privileged: true
+        command: sh -c "./init.sh"
+        volumes:
+            - redis-data:/data
+
+    rabbit:
+        image: rabbitmq:3-management
+        ports:
+            - "15673:15672"
+
+    airports:
+        build:
+            context: airport
+        depends_on:
+            - rabbit
+        environment:
+            REDIS_HOST: "redis"
+            REDIS_PORT: "6379"
+            RABBIT_PASSWORD: "guest"
+            RABBIT_USER: "guest"
+            RABBIT_HOST: "rabbit"
+            RABBIT_PORT: "5672"
+
+    trips:
+        build:
+            context: trip
+        depends_on:
+            - rabbit
+        environment:
+            REDIS_HOST: "redis"
+            REDIS_PORT: "6379"
+            RABBIT_PASSWORD: "guest"
+            RABBIT_USER: "guest"
+            RABBIT_HOST: "rabbit"
+            RABBIT_PORT: "5672"
+
+    gateway:
+        build:
+            context: gateway
+        depends_on:
+            - rabbit
+        ports:
+            - "8000:8000"
+        environment:
+            RABBIT_PASSWORD: "guest"
+            RABBIT_USER: "guest"
+            RABBIT_HOST: "rabbit"
+            RABBIT_PORT: "5672"
+
+volumes:
+    redis-data:
